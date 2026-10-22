@@ -29,12 +29,6 @@ magazzino-lpp/
 `materiali` (codice, descrizione, categoria, quantità, ubicazione, soglia, note) · `movimenti` (articolo, tipo, quantità, data, causale, note, utente, creato_il).
 Viste: `v_articoli`, `v_movimenti`. Lo storico non si può modificare né cancellare; la quantità si cambia solo con i movimenti.
 
-## Logo e immagini dei profumi
-- **Logo**: salva il file come `public/logo.png` (sfondo trasparente, meglio se chiaro su fondo scuro). Se manca, compare solo il nome del marchio.
-- **Foto flaconi**: copia i file in `public/prodotti/` (es. `public/prodotti/pax.png`), poi in Articoli → Modifica del profumo scrivi nel campo Immagine `/prodotti/pax.png`. Va bene anche il link a un'immagine online.
-- **Colori**: sono tutti nelle prime righe di `src/styles.css`.
-- **Se avevi già installato la versione precedente**: esegui UNA volta `supabase/migrazione_immagini.sql` nel SQL Editor di Supabase.
-
 ## 1. Configurare Supabase (10 minuti)
 1. Crea un account su https://supabase.com → **New project** (scegli regione EU, annota la password del database).
 2. **SQL Editor → New query**: incolla tutto `supabase/schema.sql` → **Run**. Deve finire senza errori.
@@ -75,3 +69,4 @@ npm run dev              # http://localhost:5173
 - **Backup**: il piano gratuito di Supabase non include backup automatici. Esporta ogni mese giacenze e movimenti in CSV (pulsanti "Esporta CSV").
 - Un progetto Supabase gratuito va in pausa dopo ~7 giorni senza attività: con uso quotidiano non succede; se capita, riattivalo dalla dashboard.
 - La *anon key* è pubblica per natura: la sicurezza è garantita dalle regole del database (RLS) nello schema.
+# magazzini

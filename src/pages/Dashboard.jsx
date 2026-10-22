@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { giorniFa, formatoOra } from '../lib/utils'
 
-export default function Dashboard({ vai, nome }) {
+export default function Dashboard({ vai }) {
   const [articoli, setArticoli] = useState([])
   const [mov, setMov] = useState([])
 
@@ -29,7 +29,6 @@ export default function Dashboard({ vai, nome }) {
 
   return (
     <>
-      <p className="saluto">Ciao {nome}, ecco lo stato del magazzino.</p>
       <section className="riepilogo">
         <div><b>{articoli.length}</b><span>SKU in anagrafica</span></div>
         <div className={sotto.length ? 'allarme' : ''}><b>{sotto.length}</b><span>sotto scorta</span></div>
