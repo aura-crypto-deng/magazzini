@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Logo from '../components/Logo'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -18,8 +19,7 @@ export default function Login() {
   return (
     <main className="login">
       <form onSubmit={accedi}>
-        <h1>Lorenzo Pazzaglia Parfum</h1>
-        <p>Magazzino interno</p>
+        <Logo grande />
         <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" /></label>
         <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" /></label>
         {errore && <p className="errore">{errore}</p>}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { oggi } from '../lib/utils'
 import Scanner from '../components/Scanner'
+import Thumb from '../components/Thumb'
 
 const CAUSALI = {
   carico: ['acquisto', 'produzione', 'reso', 'inventario', 'altro'],
@@ -51,7 +52,6 @@ export default function Movimenti() {
 
   return (
     <form className="modulo" onSubmit={registra}>
-      <h2>Nuovo movimento</h2>
       <div className="interruttore">
         <button type="button" className={tipo === 'scarico' ? 'attivo' : ''} onClick={() => cambiaTipo('scarico')}>Scarico (uscita)</button>
         <button type="button" className={tipo === 'carico' ? 'attivo' : ''} onClick={() => cambiaTipo('carico')}>Carico (entrata)</button>
@@ -66,7 +66,16 @@ export default function Movimenti() {
           {opzioni.map((a) => <option key={a.id} value={a.id}>{a.descrizione}{a.capacita_ml ? ` ${a.capacita_ml} ml` : ''} · {a.codice} (giac. {a.quantita})</option>)}
         </select>
       </label>
-      {articolo && <p className={articolo.sotto_soglia ? 'errore' : 'info'}>Giacenza attuale: <b>{articolo.quantita}</b>{articolo.ubicazione && ` · ${articolo.ubicazione}`}</p>}
+      {articolo && (
+        <div className="selezionato">
+          <Thumb src={articolo.immagine_url} nome={articolo.descrizione} />
+          <div>
+            <b>{articolo.descrizione}{articolo.capacita_ml ? ` ${articolo.capacita_ml} ml` : ''}</b>
+            <small>{articolo.codice}{articolo.ubicazione ? ` · ${articolo.ubicazione}` : ''}</small>
+            <p className={articolo.sotto_soglia ? 'errore' : 'info'}>Giacenza attuale: <b>{articolo.quantita}</b></p>
+          </div>
+        </div>
+      )}
       <label>Quantità<input type="number" min="1" value={quantita} onChange={(e) => setQuantita(e.target.value)} required /></label>
       {eccede && <p className="errore">Attenzione: stai scaricando più della giacenza ({articolo.quantita}). Il movimento verrà rifiutato.</p>}
       <label>Data<input type="date" value={data} onChange={(e) => setData(e.target.value)} required /></label>
