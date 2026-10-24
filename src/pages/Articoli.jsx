@@ -7,6 +7,20 @@ import Thumb from '../components/Thumb'
 import Icon from '../components/Icon'
 
 const CATEGORIE = ['profumo', 'scatola', 'tappo', 'campione', 'altro']
+// Dopo una modifica controlla che almeno una riga sia stata aggiornata davvero
+// (le regole di sicurezza del database possono rifiutare senza dare errore)
+const modificato = async (p) => {
+  const d = await ok(p.select('id'))
+  if (!d?.length) throw new Error('Modifica non salvata: il database l\'ha rifiutata. Controlla di essere admin.')
+}
+const messaggio = (e) => {
+  const m = e.message || ''
+  if (m.includes('duplicate')) return 'Codice o variante già esistente.'
+  if (m.includes('immagine_url')) return 'Manca la colonna immagine: esegui su Supabase il file supabase/migrazione_immagini.sql.'
+  if (m.includes('permission denied')) return 'Permesso negato dal database (controlla di essere admin e di aver eseguito tutto schema.sql).'
+  if (m.includes('row-level security')) return 'Operazione non consentita: serve il ruolo admin.'
+  return m
+}
 const VUOTO = { tipo: 'profumo', categoria: 'scatola', codice: '', descrizione: '', capacita_ml: 50, ubicazione: '', soglia_min: 0, note: '', immagine_url: '', quantita_iniziale: 0 }
 
 export default function Articoli({ admin }) {
@@ -17,6 +31,7 @@ export default function Articoli({ admin }) {
   const [form, setForm] = useState(null)
   const [scan, setScan] = useState(false)
   const [errore, setErrore] = useState('')
+  const apri = (f) => { setErrore(''); setForm(f) }
 
   const carica = async () => {
     const { data, error } = await supabase.from('v_articoli').select('*').order('descrizione').order('capacita_ml')
@@ -43,10 +58,10 @@ export default function Articoli({ admin }) {
       if (f.id) {
         // ---- MODIFICA ----
         if (f.tipo === 'profumo') {
-          await ok(supabase.from('profumi').update({ nome: f.descrizione, immagine_url: f.immagine_url || null }).eq('id', f.profumo_id))
-          await ok(supabase.from('varianti').update({ sku: f.codice, capacita_ml: +f.capacita_ml, ...comuni }).eq('id', f.id))
+          await modificato(supabase.from('profumi').update({ nome: f.descrizione, ...(f.immagine_url !== undefined ? { immagine_url: f.immagine_url || null } : {}) }).eq('id', f.profumo_id))
+          await modificato(supabase.from('varianti').update({ sku: f.codice, capacita_ml: +f.capacita_ml, ...comuni }).eq('id', f.id))
         } else {
-          await ok(supabase.from('materiali').update({ codice: f.codice, descrizione: f.descrizione, categoria: f.categoria, ...comuni }).eq('id', f.id))
+          await modificato(supabase.from('materiali').update({ codice: f.codice, descrizione: f.descrizione, categoria: f.categoria, ...comuni }).eq('id', f.id))
         }
       } else {
         // ---- NUOVO ----
@@ -54,7 +69,7 @@ export default function Articoli({ admin }) {
         if (f.tipo === 'profumo') {
           // se il profumo esiste già (altra capacità) lo riuso, altrimenti lo creo
           let p = await ok(supabase.from('profumi').select('id').eq('nome', f.descrizione).maybeSingle())
-          if (!p) p = await ok(supabase.from('profumi').insert({ nome: f.descrizione, immagine_url: f.immagine_url || null }).select('id').single())
+          if (!p) p = await ok(supabase.from('profumi').insert({ nome: f.descrizione, ...(f.immagine_url ? { immagine_url: f.immagine_url } : {}) }).select('id').single())
           else if (f.immagine_url) await ok(supabase.from('profumi').update({ immagine_url: f.immagine_url }).eq('id', p.id))
           const v = await ok(supabase.from('varianti').insert({ profumo_id: p.id, sku: f.codice, capacita_ml: +f.capacita_ml, ...comuni }).select('id').single())
           id = v.id; colonna = 'variante_id'
@@ -69,7 +84,7 @@ export default function Articoli({ admin }) {
       }
       setForm(null); carica()
     } catch (e) {
-      setErrore(e.message.includes('duplicate') ? 'Codice o variante già esistente.' : e.message)
+      setErrore(messaggio(e))
     }
   }
 
@@ -101,9 +116,9 @@ export default function Articoli({ admin }) {
           {[28, 50, 75].map((c) => <option key={c} value={c}>{c} ml</option>)}
         </select>
         <button className="secondario" onClick={esporta}><Icon n="download" />Esporta CSV</button>
-        {admin && <button onClick={() => setForm({ ...VUOTO })}><Icon n="plus" />Nuovo articolo</button>}
+        {admin && <button onClick={() => apri({ ...VUOTO })}><Icon n="plus" />Nuovo articolo</button>}
       </div>
-      {errore && <p className="errore">{errore}</p>}
+      {errore && !form && <p className="errore">{errore}</p>}
 
       {profumi.length > 0 && (
         <section className="griglia">
@@ -118,12 +133,12 @@ export default function Articoli({ admin }) {
                     <small>{v.codice}{v.ubicazione ? ` · ${v.ubicazione}` : ''}</small>
                     <span className="qta">{v.quantita}{v.sotto_soglia && <span className="badge">scorta</span>}</span>
                     {admin && <span className="azioni">
-                      <button className="secondario piccolo" onClick={() => setForm({ ...v, immagine_url: p.img || '', quantita_iniziale: 0 })}>Modifica</button>
+                      <button className="secondario piccolo" onClick={() => apri({ ...v, immagine_url: p.img || '', quantita_iniziale: 0 })}>Modifica</button>
                       <button className="pericolo piccolo" onClick={() => elimina(v)}>Elimina</button>
                     </span>}
                   </div>
                 ))}
-                {admin && <button className="secondario piccolo" onClick={() => setForm({ ...VUOTO, descrizione: p.nome, immagine_url: p.img || '' })}>+ capacità</button>}
+                {admin && <button className="secondario piccolo" onClick={() => apri({ ...VUOTO, descrizione: p.nome, immagine_url: p.img || '' })}>+ capacità</button>}
               </div>
             </article>
           ))}
@@ -143,7 +158,7 @@ export default function Articoli({ admin }) {
                     <td>{r.descrizione}<small> {r.categoria}</small>{r.sotto_soglia && <span className="badge">sotto scorta</span>}</td>
                     <td className="num"><b>{r.quantita}</b></td><td>{r.ubicazione}</td><td className="num">{r.soglia_min}</td>
                     {admin && <td className="azioni">
-                      <button className="secondario piccolo" onClick={() => setForm({ ...r, quantita_iniziale: 0 })}>Modifica</button>
+                      <button className="secondario piccolo" onClick={() => apri({ ...r, quantita_iniziale: 0 })}>Modifica</button>
                       <button className="pericolo piccolo" onClick={() => elimina(r)}>Elimina</button>
                     </td>}
                   </tr>
@@ -156,12 +171,12 @@ export default function Articoli({ admin }) {
       {filtrate.length === 0 && <p className="vuoto">Nessun articolo trovato.</p>}
 
       {scan && <Scanner onChiudi={() => setScan(false)} onCodice={(c) => { setQ(c); setScan(false) }} />}
-      {form && <Modulo f={form} onSalva={salva} onChiudi={() => setForm(null)} />}
+      {form && <Modulo f={form} errore={errore} onSalva={salva} onChiudi={() => { setForm(null); setErrore('') }} />}
     </>
   )
 }
 
-function Modulo({ f, onSalva, onChiudi }) {
+function Modulo({ f, errore, onSalva, onChiudi }) {
   const [v, setV] = useState(f)
   const set = (k) => (e) => setV({ ...v, [k]: e.target.value })
   const nuovo = !v.id
@@ -189,6 +204,7 @@ function Modulo({ f, onSalva, onChiudi }) {
         {nuovo && <label>Giacenza iniziale<input type="number" min="0" value={v.quantita_iniziale} onChange={set('quantita_iniziale')} /></label>}
         <label>Note<textarea value={v.note || ''} onChange={set('note')} /></label>
         {!nuovo && tipoProfumo && <small>Il nome vale per tutte le capacità dello stesso profumo. La giacenza si cambia solo con un movimento.</small>}
+        {errore && <p className="errore">{errore}</p>}
         <div className="azioni"><button>Salva</button><button type="button" className="secondario" onClick={onChiudi}>Annulla</button></div>
       </form>
     </div>
