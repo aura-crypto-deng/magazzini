@@ -1,6 +1,7 @@
 // Storico movimenti con filtri ed export CSV
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Icon from '../components/Icon'
 import { giorniFa, oggi, formatoData, formatoOra, scaricaCSV } from '../lib/utils'
 
 export default function Storico() {
@@ -36,10 +37,10 @@ export default function Storico() {
       <div className="barra">
         <label>Dal<input type="date" value={f.da} onChange={set('da')} /></label>
         <label>Al<input type="date" value={f.a} onChange={set('a')} /></label>
-        <input type="search" placeholder="Articolo o codice" value={f.q} onChange={set('q')} />
+        <div className="ricerca"><Icon n="search" /><input type="search" placeholder="Articolo o codice" value={f.q} onChange={set('q')} /></div>
         <select value={f.tipo} onChange={set('tipo')}><option value="">Carichi e scarichi</option><option value="carico">Solo carichi</option><option value="scarico">Solo scarichi</option></select>
         <select value={f.utente} onChange={set('utente')}><option value="">Tutti gli utenti</option>{utenti.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}</select>
-        <button className="secondario" onClick={esporta}>Esporta CSV</button>
+        <button className="secondario" onClick={esporta}><Icon n="download" />Esporta CSV</button>
       </div>
       {errore && <p className="errore">{errore}</p>}
       <div className="tabella-wrap">

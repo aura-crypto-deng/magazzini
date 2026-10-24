@@ -34,7 +34,8 @@ $$;
 create table profumi (
   id   uuid primary key default gen_random_uuid(),
   nome text not null unique,
-  note text
+  note text,
+  immagine_url text                          -- link o percorso immagine (es. /prodotti/pax.png)
 );
 
 create table varianti (
@@ -106,11 +107,11 @@ create trigger dopo_movimento after insert on movimenti
 create view v_articoli with (security_invoker = true) as
   select 'profumo'::text as tipo, v.id, v.sku as codice, p.nome as descrizione,
          'profumo'::text as categoria, v.capacita_ml, v.quantita, v.ubicazione,
-         v.soglia_min, v.note, p.id as profumo_id, (v.quantita < v.soglia_min) as sotto_soglia
+         v.soglia_min, v.note, p.id as profumo_id, (v.quantita < v.soglia_min) as sotto_soglia, p.immagine_url
     from varianti v join profumi p on p.id = v.profumo_id
   union all
   select 'materiale', m.id, m.codice, m.descrizione, m.categoria, null::int, m.quantita,
-         m.ubicazione, m.soglia_min, m.note, null::uuid, (m.quantita < m.soglia_min)
+         m.ubicazione, m.soglia_min, m.note, null::uuid, (m.quantita < m.soglia_min), null::text
     from materiali m;
 
 create view v_movimenti with (security_invoker = true) as
